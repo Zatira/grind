@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grind</title>
+    <style>
+        :root {
+            --space: 8px;
+            --light: white;
+            --dark: black;
+        }
+
+        .directory {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            flex-wrap: wrap;
+            gap: calc(var(--space) / 2);
+        }
+
+        .directory>* {
+            flex-basis: 50px;
+            flex-grow: 1;
+            padding: calc(var(--space) / 2);
+            text-align: center;
+        }
+
+        .directory>*>*+* {
+            border-top: 1px solid var(--light)
+        }
+
+        body {
+            color-scheme: light dark;
+            font-size: 1rem;
+            line-height: 1.25rem;
+            font-family: sans-serif;
+        }
+
+        dialog {
+            padding: 0;
+
+            .dialog_wrapper {
+                padding: var(--space);
+            }
+        }
+
+        .spaced {
+            display: flex;
+            align-items: center;
+            gap: var(--space);
+        }
+
+        .v-spaced {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space);
+        }
+
+        button {
+            border: 0;
+            padding: var(--space);
+        }
+
+        input {
+            border: 0;
+            padding: var(--space);
+        }
+
+        .bigger {
+            font-size: 3rem;
+        }
+
+        @media (prefers-color-scheme: light) {
+
+            body,
+            text,
+            svg {
+                color: var(--dark);
+                fill: var(--dark);
+                background-color: var(--light);
+            }
+        }
+
+        @media (prefers-color-scheme: dark) {
+
+            body,
+            text,
+            svg {
+                color: var(--light);
+                fill: var(--light);
+                background-color: var(--dark);
+            }
+        }
+
+        .wrong {
+            color: darkred;
+        }
+
+        label {
+            display: flex;
+            gap: calc(var(--space) / 2);
+            flex-direction: column;
+        }
+
+        .toast {
+            position: absolute;
+            inset: 50%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-height: 80vh;
+        }
+
+        header h1 {
+            font-size: 1rem;
+            line-height: 1.25rem;
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <outlet></outlet>
+    <script type="text/javascript">
+        const state = {}
+        const config_key = "grind_config"
+        const stones_key = "grind_stones"
+        load()
+        render()
+
+        function load() {
+            state.config = JSON.parse(localStorage.getItem(config_key) ?? "{}")
+            state.stones = JSON.parse(localStorage.getItem(stones_key) ?? "{}")
+            sanitize()
+        }
+
+        function save() {
+            localStorage.setItem(config_key, JSON.stringify(state.config ?? {}))
+            localStorage.setItem(stones_key, JSON.stringify(state.stones ?? {}))
+        }
+
+        function svg(tag, children = [], opts = {}) {
+            const el = document.createElementNS("http://www.w3.org/2000/svg", tag)
+            el.append(...children)
+            for (const [key, value] of Object.entries(opts)) {
+                if (key === 'value') {
+                    if (value != undefined) {
+                        el.setAttribute(key, value)
+                        el.value = value
+                    }
+                } else if (key.startsWith('$')) {
+                    el.addEventListener(key.substring(1), value)
+                } else if (key == 'class') {
+                    el.classList.add(...(value.split(' ')))
+                } else if (key == 'disabled') {
+                    if (value) {
+                        el.setAttribute(key, value)
+                    }
+                } else {
+                    el.setAttribute(key, value)
+                }
+            }
+            return el
+        }
+
+        function e(tag, content = [], opts = {}) {
+            const el = document.createElement(tag)
+            if (Array.isArray(content)) {
+                el.append(...content)
+            } else {
+                el.append(content)
+            }
+            if (tag == "button" && !opts.type) {
+                opts.type = "button"
+            }
+            for (const [key, value] of Object.entries(opts)) {
+                if (key === 'value') {
+                    if (value != undefined) {
+                        el.setAttribute(key, value)
+                        el.value = value
+                    }
+                } else if (key.startsWith('$')) {
+                    el.addEventListener(key.substring(1), value)
+                } else if (key == 'class') {
+                    el.classList.add(...(value.split(' ')))
+                } else if (key == 'disabled') {
+                    if (value) {
+                        el.setAttribute(key, value)
+                    }
+                } else {
+                    el.setAttribute(key, value)
+                }
+            }
+            return el
+        }
+
+        function modal(content) {
+            const wrapper = e('div', [content], { class: 'dialog_wrapper' })
+            const dialog = e("dialog", wrapper, { $close: () => dialog.remove() })
+            document.body.appendChild(dialog)
+            dialog.showModal()
+            dialog.addEventListener('click', (ev) => {
+                if (ev.target === dialog) {
+                    dialog.close();
+                }
+            });
+        }
+
+        function atMidhnight(date) {
+            date.setHours(0, 0, 0, 0)
+            return date
+        }
+
+        function sharpen(stone, nudge, now) {
+            nudge.next = now + (((nudge.l ?? 0) + 1) * 24 * 60 * 60 * 1000)
+            nudge.l = (nudge.l ?? 0) + 1
+        }
+
+        function dent(stone, nudge, now) {
+            nudge.l = 0
+            nudge.next = now
+        }
+
+        function toast(content, autoclose = true) {
+            const toast = e('div', content, { class: "toast" })
+            document.body.append(toast)
+            if (autoclose) {
+                setTimeout(() => {
+                    toast.remove()
+                }, 3000);
+            }
+        }
+
+        function download(data, filename, type) {
+            var file = new Blob([data], { type: type });
+            var a = document.createElement("a"),
+                url = URL.createObjectURL(file);
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function () {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 0);
+        }
+
+        function remove(k) {
+            const name = state.stones[k].name
+            delete state.stones[k]
+            if (state.config.selected == k) {
+                delete state.config.selected
+            }
+            toast(`${name} gelöscht!`)
+            save()
+            render()
+        }
+
+        function removeDialog(k, self) {
+            const content = e('div', [
+                e('span', `${state.stones[k].name} wirklich löschen?`),
+                e('div', [
+                    e('button', `Ja`, {
+                        type: "button", $click: (event) => {
+                            remove(k)
+                            self.render()
+                            event.target.closest("dialog")?.close()
+                        }
+                    }),
+                    e('button', `Nein`, {
+                        type: "button", $click: (event) => {
+                            event.target.closest("dialog")?.close()
+                        }
+                    })
+                ], { class: "spaced" })
+            ], { class: 'v-spaced' })
+            modal(content)
+        }
+
+        function sluggy(v) {
+            return v //TODO: sluggify
+        }
+
+        function showNewSet() {
+            const newSetForm = e("form", [
+                e('span', "Neues Set"),
+                fieldFn("Name des Sets", { name: "name", required: true }),
+                e("button", ["Set erstellen"], { type: "submit" })
+            ], {
+                class: "v-spaced",
+                $submit: async (event) => {
+                    const fd = new FormData(event.target)
+                    const name = fd.get("name")
+                    const key = sluggy(name)
+                    const stone = {
+                        name,
+                        key,
+                        nudges: {},
+                        groves: {}
+                    }
+                    state.stones[stone.key] = stone
+                    stone.groves = {};
+                    [...Object.keys(stone.nudges)].forEach(k => stone.groves[k] = { id: k, next: 0 })
+                    state.config.selected = stone.key
+                    toast("Erstellt")
+                    save()
+                    render()
+                    event.target.closest("dialog")?.close()
+                }
+            })
+            modal(newSetForm)
+        }
+
+        function ingestData(data) {
+            const stone = JSON.parse(data)
+            if (typeof stone.key !== "string") {
+                throw ("key needs to be a string")
+            }
+            if (typeof stone.name !== "string") {
+                throw ("name needs to be a string")
+            }
+            if (Array.isArray(stone.nudges) && typeof stone.nudges === "object") {
+                throw ("nudges needs to be an object")
+            }
+            if (!Object.keys(stone.nudges).every(k => typeof k === "string")) {
+                throw ("nudge keys need to be strings")
+            }
+            const verifyNudge = (nudge) => {
+                if (typeof nudge.q !== "string") {
+                    throw ("nudge.q needs to be a string")
+                }
+                if (typeof nudge.a !== "string") {
+                    throw ("nudge.a needs to be a string")
+                }
+            }
+            Object.values(stone.nudges).forEach(verifyNudge)
+            state.stones[stone.key] = stone
+            stone.groves = {};
+            [...Object.keys(stone.nudges)].forEach(k => stone.groves[k] = { id: k, next: 0 })
+            state.config.selected = stone.key
+            toast("Importiert!")
+            save()
+        }
+
+        function sanitize() {
+            if (!state?.config?.selected) {
+                return
+            }
+            const id = state.config.selected
+            if (!state.stones[id]) {
+                return
+            }
+            if (Array.isArray(state.stones[id].groves)) {
+                state.stones[id].groves = {}
+            }
+            const groves = state.stones[id].groves
+            const nudges = state.stones[id].nudges
+            const nudgeKeys = new Set(Object.keys(nudges))
+            const groveKeys = new Set(Object.keys(groves))
+            const missingGroves = nudgeKeys.difference(groveKeys)
+            const orphanGroves = groveKeys.difference(nudgeKeys)
+            orphanGroves.forEach(key => delete groves[key])
+            missingGroves.forEach(key => groves[key] = { id: key, next: 0 })
+        }
+
+        function selectSet(id) {
+            state.config.selected = id;
+            sanitize()
+            save()
+            render()
+        }
+
+        class SelectionComponent {
+            element = null
+            render() {
+                const rows = [...Object.entries(state.stones)]
+                    .map(([k, v]) => e("div", [
+                        e('span', v.name, { style: "flex-grow:1" }),
+                        e('button', ['Wählen'], {
+                            disabled: state.config.selected == k,
+                            $click: () => {
+                                selectSet(k)
+                                event.target.closest("dialog")?.close()
+                            }
+                        }),
+                        e('button', ['Export'], {
+                            $click: () => {
+                                download(JSON.stringify(state.stones[k]), `${k}-grind.json`, 'application/json')
+                            }
+                        }),
+                        e('button', ['🗑'], {
+                            $click: () => {
+                                removeDialog(k, this)
+                            }
+                        }),
+                    ], { class: "spaced" }))
+                const existingSelection = e("div", rows, { class: "v-spaced" })
+                const fileImportForm = e("form", [
+                    e("input", [], { name: "file", type: "file", required: true, style: "flex-grow:1" }),
+                    e("button", ["Datei laden"], { type: "submit" })
+                ], {
+                    class: "spaced",
+                    method: "dialog",
+                    $submit: async (event) => {
+                        const fd = new FormData(event.target)
+                        const filehandle = fd.get("file")
+                        if (!filehandle || typeof filehandle === "string") {
+                            return
+                        }
+                        const content = await filehandle.text()
+                        ingestData(content)
+                        render()
+                        this.render()
+                    }
+                })
+                const remoteImportForm = e("form", [
+                    e("input", [], { name: "url", type: "text", required: true, style: "flex-grow:1" }),
+                    e("button", ["Url laden"], { type: "submit" })
+                ], {
+                    class: "spaced",
+                    method: "dialog",
+                    $submit: async (event) => {
+                        event.preventDefault()
+                        const fd = new FormData(event.target)
+                        const url = fd.get("url")
+                        if (typeof url !== "string") {
+                            return
+                        }
+                        const response = await fetch(url)
+                        const content = await response.text()
+                        ingestData(content)
+                        render()
+                        this.render()
+                    }
+                })
+                const content = e('div', [existingSelection, fileImportForm, remoteImportForm], { class: 'v-spaced' })
+                if (this.element) {
+                    this.element.replaceWith(content)
+                }
+                this.element = content
+                return this.element
+            }
+        }
+
+        function showSelection() {
+            const selection = new SelectionComponent()
+            modal(selection.render())
+        }
+
+        function fieldFn(label, opts) {
+            return e('label', [e('span', [label]), e('input', [], opts)])
+        }
+
+        function nudgeForm(nudge = {}, cb) {
+            const remove = () => {
+                const current = state.stones[state.config.selected]
+                delete current.nudges[nudge?.id]
+                delete current.groves[nudge?.id]
+                save()
+                cb()
+                render()
+                event.target.closest("dialog")?.close()
+            }
+            selection = e("form", [
+                e("div", [state.stones[state.config.selected].name]),
+                fieldFn("Id", { name: "id", type: "input", value: nudge.id, required: true }),
+                fieldFn("Frage", { name: "q", type: "input", value: nudge.q, required: true }),
+                fieldFn("Antwort", { name: "a", type: "input", value: nudge.a, required: true }),
+                e("button", [nudge.id ? "Ändern" : "Hinzufügen"], { type: "submit" }),
+                nudge.id != undefined ? e("button", ["Löschen"], { type: "button", $click: remove }) : '',
+            ], {
+                class: "v-spaced",
+                method: "dialog",
+                $submit: async (event) => {
+                    event.preventDefault()
+                    const fd = new FormData(event.target)
+                    const id = fd.get("id")
+                    const a = fd.get("a")
+                    const q = fd.get("q")
+                    const current = state.stones[state.config.selected]
+                    current.nudges[id] = { q, a }
+                    if (nudge.id !== id) {
+                        if (nudge?.id) {
+                            delete current.groves[id]
+                        }
+                        current.groves[id] = { id, next: 0 }
+                    }
+                    toast("Added!")
+                    save()
+                    cb()
+                    render()
+                    event.target.closest("dialog")?.close()
+                }
+            })
+            modal(selection)
+        }
+
+        function resetGroves() {
+            const stone = state.stones[state.config.selected]
+            stone.groves = {};
+            [...Object.keys(stone.nudges)].forEach(k => stone.groves[k] = { id: k, next: 0 })
+            save()
+            render()
+        }
+
+        class CurrentSetComponent {
+            element = null
+
+            render() {
+                console.log(state.stones[state.config.selected])
+                const nudges = state.stones[state.config.selected].nudges
+                const renderTile = ([id, v]) => {
+                    return e('button', [e('div', v.q), e('div', v.a)], { $click: () => nudgeForm({ id, ...v }, () => this.render()) })
+                }
+                const content = e('div', [
+                    ...[...Object.entries(nudges)].map(renderTile)
+                ], { class: "directory" })
+                if (this.element) {
+                    this.element.replaceWith(content)
+                }
+                this.element = content
+                return this.element
+            }
+        }
+
+        function showAll() {
+            modal(new CurrentSetComponent().render())
+        }
+
+        function render() {
+            const outlet = document.querySelector("outlet") ?? e("outlet")
+            if (!outlet.parentElement) {
+                document.body.append(outlet)
+            }
+            outlet.innerHTML = ""
+            const leftSide = e('div', [], { class: "spaced" })
+            const rightSide = e('div', [
+                e("button", ["Sets"], { $click: () => showSelection() })
+            ], { class: "spaced" })
+            const header = e('header', [
+                leftSide,
+                rightSide
+            ])
+            outlet.append(header)
+            const selected = state?.config?.selected
+            if (selected && state?.stones[selected]) {
+                const selectedStone = state?.stones[selected]
+                const material = selectedStone.material
+                const groves = selectedStone.groves
+                const now = atMidhnight(new Date())
+                const nowMilis = now.getTime()
+                const nudges = [...Object.values(groves)].filter((v) => v.next <= nowMilis)
+                nudges.sort((a, b) => a.l - b.l)
+
+                leftSide.append(e("h1", [selectedStone.name]))
+                rightSide.append(e("button", ["+"], { type: "button", $click: () => nudgeForm() }))
+                rightSide.append(e("button", ["≡"], { type: "button", $click: () => showAll() }))
+
+                if (nudges.length == 0) {
+                    outlet.append(e("div", [e('p', "All done!"), e('p', "Keine offenen Aufgaben.")], { style: "text-align:center" }))
+                    return
+                } else {
+                    leftSide.append(e("span", [`(offen: ${nudges.length})`]))
+                }
+                const nudge = nudges[Math.min(Math.floor(Math.random() * nudges.length), nudges.length - 1)]
+                const answerInput = e("input", [], { name: "answer", autocomplete: "off", autofocus: true })
+                const form = e("form", [
+                    answerInput,
+                    e("button", [">"], { type: "submit", style: "font-weight: bold" })
+                ], {
+                    class: "spaced",
+                    $submit: (event) => {
+                        event.preventDefault()
+                        const fd = new FormData(event.target)
+                        const answer = fd.get("answer")
+                        const correctAnswer = selectedStone.nudges[nudge.id].a
+                        renderResult(answer, correctAnswer, nudge, nowMilis)
+                        save()
+                    }
+                })
+                const content = e('content', [
+                    svg("svg", [svg("text", [selectedStone.nudges[nudge.id].q])]),
+                    form
+                ])
+                outlet.append(content)
+                answerInput.focus()
+            } else {
+                leftSide.append(e("h1", ['👋']))
+                outlet.append(e('div', [
+                    e('h2', 'Hallo!'),
+                    e('p', 'Es ist kein Set gewählt.'),
+                    e('p', 'Set wählen:'),
+                    e("button", ["Sets"], { $click: () => showSelection() }),
+                    e('p', 'Neues Set anlegen:'),
+                    e("button", ["Neues Set"], { $click: () => showNewSet() })
+                ], { style: "text-align: center" }))
+            }
+            const svgs = document.querySelectorAll("svg");
+            svgs.forEach(element => {
+                const bbox = element.querySelector("text").getBBox();
+                element.setAttribute("viewBox", [bbox.x, bbox.y, bbox.width, bbox.height].join(" "));
+            });
+        }
+
+        function renderResult(answer, correctAnswer, nudge, nowMilis) {
+            const selected = state?.config?.selected
+            const selectedStone = state?.stones[selected]
+            const outlet = document.querySelector("outlet") ?? e("outlet")
+            if (!outlet.parentElement) {
+                document.body.append(outlet)
+            }
+            outlet.innerHTML = ""
+            let displayTime = 3000
+            if (answer == correctAnswer) {
+                displayTime = 1500
+                sharpen(selectedStone, nudge, nowMilis)
+                outlet.append(e('content', [e('p', ["✔"], { style: "color: green" }), e('p', [selectedStone.nudges[nudge.id].q, ' ', correctAnswer])], { class: "bigger" }))
+            } else {
+                dent(selectedStone, nudge, nowMilis)
+                outlet.append(e('content', [e('p', ["✘"], { style: "color: red" }), e('p', [answer], { class: "wrong" }), e('p', [selectedStone.nudges[nudge.id].q, ' ', correctAnswer])], { class: "bigger" }))
+            }
+            setTimeout(() => render(), displayTime)
+        }
+    </script>
+</body>
+
+</html>
