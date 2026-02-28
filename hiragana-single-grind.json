@@ -1,0 +1,190 @@
+{
+    "key": "hiragana-single",
+    "name": "Hiragana Einzeln",
+    "nudges": {
+        "Hiragana-a": {
+            "q": "あ",
+            "a": "a"
+        },
+        "Hiragana-i": {
+            "q": "い",
+            "a": "i"
+        },
+        "Hiragana-u": {
+            "q": "う",
+            "a": "u"
+        },
+        "Hiragana-e": {
+            "q": "え",
+            "a": "e"
+        },
+        "Hiragana-o": {
+            "q": "お",
+            "a": "o"
+        },
+        "Hiragana-ka": {
+            "q": "か",
+            "a": "ka"
+        },
+        "Hiragana-ki": {
+            "q": "き",
+            "a": "ki"
+        },
+        "Hiragana-ku": {
+            "q": "く",
+            "a": "ku"
+        },
+        "Hiragana-ke": {
+            "q": "け",
+            "a": "ke"
+        },
+        "Hiragana-ko": {
+            "q": "こ",
+            "a": "ko"
+        },
+        "Hiragana-sa": {
+            "q": "さ",
+            "a": "sa"
+        },
+        "Hiragana-shi": {
+            "q": "し",
+            "a": "shi"
+        },
+        "Hiragana-su": {
+            "q": "す",
+            "a": "su"
+        },
+        "Hiragana-se": {
+            "q": "せ",
+            "a": "se"
+        },
+        "Hiragana-so": {
+            "q": "そ",
+            "a": "so"
+        },
+        "Hiragana-ta": {
+            "q": "た",
+            "a": "ta"
+        },
+        "Hiragana-chi": {
+            "q": "ち",
+            "a": "chi"
+        },
+        "Hiragana-tsu": {
+            "q": "つ",
+            "a": "tsu"
+        },
+        "Hiragana-te": {
+            "q": "て",
+            "a": "te"
+        },
+        "Hiragana-to": {
+            "q": "と",
+            "a": "to"
+        },
+        "Hiragana-na": {
+            "q": "な",
+            "a": "na"
+        },
+        "Hiragana-ni": {
+            "q": "に",
+            "a": "ni"
+        },
+        "Hiragana-nu": {
+            "q": "ぬ",
+            "a": "nu"
+        },
+        "Hiragana-ne": {
+            "q": "ね",
+            "a": "ne"
+        },
+        "Hiragana-no": {
+            "q": "の",
+            "a": "no"
+        },
+        "Hiragana-ha": {
+            "q": "は",
+            "a": "ha"
+        },
+        "Hiragana-hi": {
+            "q": "ひ",
+            "a": "hi"
+        },
+        "Hiragana-fu": {
+            "q": "ふ",
+            "a": "fu"
+        },
+        "Hiragana-he": {
+            "q": "へ",
+            "a": "he"
+        },
+        "Hiragana-ho": {
+            "q": "ほ",
+            "a": "ho"
+        },
+        "Hiragana-ma": {
+            "q": "ま",
+            "a": "ma"
+        },
+        "Hiragana-mi": {
+            "q": "み",
+            "a": "mi"
+        },
+        "Hiragana-mu": {
+            "q": "む",
+            "a": "mu"
+        },
+        "Hiragana-me": {
+            "q": "め",
+            "a": "me"
+        },
+        "Hiragana-mo": {
+            "q": "も",
+            "a": "mo"
+        },
+        "Hiragana-ya": {
+            "q": "や",
+            "a": "ya"
+        },
+        "Hiragana-yu": {
+            "q": "ゆ",
+            "a": "yu"
+        },
+        "Hiragana-yo": {
+            "q": "よ",
+            "a": "yo"
+        },
+        "Hiragana-ra": {
+            "q": "ら",
+            "a": "ra"
+        },
+        "Hiragana-ri": {
+            "q": "り",
+            "a": "ri"
+        },
+        "Hiragana-ru": {
+            "q": "る",
+            "a": "ru"
+        },
+        "Hiragana-re": {
+            "q": "れ",
+            "a": "re"
+        },
+        "Hiragana-ro": {
+            "q": "ろ",
+            "a": "ro"
+        },
+        "Hiragana-wa": {
+            "q": "わ",
+            "a": "wa"
+        },
+        "Hiragana-wo": {
+            "q": "を",
+            "a": "wo"
+        },
+        "Hiragana-n": {
+            "q": "ん",
+            "a": "n"
+        }
+    }
+}

@@ -445,8 +445,12 @@
                         this.render()
                     }
                 })
-                const exampleRemotes = e('div', [
-                    URL.parse('hiragana-grind.json', location.href)
+                const exampleRemotes = e('ul', [
+                    e('li', URL.parse('hiragana-grind.json', location.href)),
+                    e('li', URL.parse('hiragana-single-grind.json', location.href)),
+                    e('li', URL.parse('hiragana-duo-grind.json', location.href)),
+                    e('li', URL.parse('hiragana-single-dia-grind.json', location.href)),
+                    e('li', URL.parse('hiragana-duo-dia-grind.json', location.href)),
                 ])
                 const content = e('div', [existingSelection, fileImportForm, remoteImportForm, exampleRemotes], { class: 'v-spaced' })
                 if (this.element) {

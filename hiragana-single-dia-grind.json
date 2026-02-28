@@ -1,0 +1,106 @@
+{
+    "key": "hiragana-single-dia",
+    "name": "Hiragana Einzeln Dia",
+    "nudges": {
+        "Hiragana-ga": {
+            "q": "が",
+            "a": "ga"
+        },
+        "Hiragana-gi": {
+            "q": "ぎ",
+            "a": "gi"
+        },
+        "Hiragana-gu": {
+            "q": "ぐ",
+            "a": "gu"
+        },
+        "Hiragana-ge": {
+            "q": "げ",
+            "a": "ge"
+        },
+        "Hiragana-go": {
+            "q": "ご",
+            "a": "go"
+        },
+        "Hiragana-za": {
+            "q": "ざ",
+            "a": "za"
+        },
+        "Hiragana-ji": {
+            "q": "じ",
+            "a": "ji"
+        },
+        "Hiragana-zu": {
+            "q": "ず",
+            "a": "zu"
+        },
+        "Hiragana-ze": {
+            "q": "ぜ",
+            "a": "ze"
+        },
+        "Hiragana-zo": {
+            "q": "ぞ",
+            "a": "zo"
+        },
+        "Hiragana-da": {
+            "q": "だ",
+            "a": "da"
+        },
+        "Hiragana-ji/dji/jyi": {
+            "q": "ぢ",
+            "a": "ji/dji/jyi"
+        },
+        "Hiragana-zu/dzu": {
+            "q": "づ",
+            "a": "zu/dzu"
+        },
+        "Hiragana-de": {
+            "q": "で",
+            "a": "de"
+        },
+        "Hiragana-": {
+            "q": "ど",
+            "a": "do"
+        },
+        "Hiragana-ba": {
+            "q": "ば",
+            "a": "ba"
+        },
+        "Hiragana-bi": {
+            "q": "び",
+            "a": "bi"
+        },
+        "Hiragana-bu": {
+            "q": "ぶ",
+            "a": "bu"
+        },
+        "Hiragana-be": {
+            "q": "べ",
+            "a": "be"
+        },
+        "Hiragana-bo": {
+            "q": "ぼ",
+            "a": "bo"
+        },
+        "Hiragana-pa": {
+            "q": "ぱ",
+            "a": "pa"
+        },
+        "Hiragana-pi": {
+            "q": "ぴ",
+            "a": "pi"
+        },
+        "Hiragana-pu": {
+            "q": "ぷ",
+            "a": "pu"
+        },
+        "Hiragana-pe": {
+            "q": "ぺ",
+            "a": "pe"
+        },
+        "Hiragana-po": {
+            "q": "ぽ",
+            "a": "po"
+        }
+    }
+}

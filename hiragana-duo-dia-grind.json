@@ -1,0 +1,54 @@
+{
+    "key": "hiragana-duo-dia",
+    "name": "Hiragana Paare Dia",
+    "nudges": {
+        "Hiragana-gya": {
+            "q": "ぎゃ",
+            "a": "gya"
+        },
+        "Hiragana-gyu": {
+            "q": "ぎゅ",
+            "a": "gyu"
+        },
+        "Hiragana-gyo": {
+            "q": "ぎょ",
+            "a": "gyo"
+        },
+        "Hiragana-ja": {
+            "q": "じゃ",
+            "a": "ja"
+        },
+        "Hiragana-ju": {
+            "q": "じゅ",
+            "a": "ju"
+        },
+        "Hiragana-jo": {
+            "q": "じょ",
+            "a": "jo"
+        },
+        "Hiragana-bya": {
+            "q": "びゃ",
+            "a": "bya"
+        },
+        "Hiragana-byu": {
+            "q": "びゅ",
+            "a": "byu"
+        },
+        "Hiragana-byo": {
+            "q": "びょ",
+            "a": "byo"
+        },
+        "Hiragana-pya": {
+            "q": "ぴゃ",
+            "a": "pya"
+        },
+        "Hiragana-pyu": {
+            "q": "ぴゅ",
+            "a": "pyu"
+        },
+        "Hiragana-pyo": {
+            "q": "ぴょ",
+            "a": "pyo"
+        }
+    }
+}

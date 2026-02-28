@@ -1,0 +1,90 @@
+{
+    "key": "hiragana-duo",
+    "name": "Hiragana Paare",
+    "nudges": {
+        "Hiragana-kya": {
+            "q": "きゃ",
+            "a": "kya"
+        },
+        "Hiragana-kyu": {
+            "q": "きゅ",
+            "a": "kyu"
+        },
+        "Hiragana-kyo": {
+            "q": "きょ",
+            "a": "kyo"
+        },
+        "Hiragana-sha": {
+            "q": "しゃ",
+            "a": "sha"
+        },
+        "Hiragana-shu": {
+            "q": "しゅ",
+            "a": "shu"
+        },
+        "Hiragana-sho": {
+            "q": "しょ",
+            "a": "sho"
+        },
+        "Hiragana-cha": {
+            "q": "ちゃ",
+            "a": "cha"
+        },
+        "Hiragana-chu": {
+            "q": "ちゅ",
+            "a": "chu"
+        },
+        "Hiragana-cho": {
+            "q": "ちょ",
+            "a": "cho"
+        },
+        "Hiragana-nya": {
+            "q": "にゃ",
+            "a": "nya"
+        },
+        "Hiragana-nyu": {
+            "q": "にゅ",
+            "a": "nyu"
+        },
+        "Hiragana-nyo": {
+            "q": "にょ",
+            "a": "nyo"
+        },
+        "Hiragana-hya": {
+            "q": "ひゃ",
+            "a": "hya"
+        },
+        "Hiragana-hyu": {
+            "q": "ひゅ",
+            "a": "hyu"
+        },
+        "Hiragana-hyo": {
+            "q": "ひょ",
+            "a": "hyo"
+        },
+        "Hiragana-mya": {
+            "q": "みゃ",
+            "a": "mya"
+        },
+        "Hiragana-myu": {
+            "q": "みゅ",
+            "a": "myu"
+        },
+        "Hiragana-myo": {
+            "q": "みょ",
+            "a": "myo"
+        },
+        "Hiragana-rya": {
+            "q": "りゃ",
+            "a": "rya"
+        },
+        "Hiragana-ryu": {
+            "q": "りゅ",
+            "a": "ryu"
+        },
+        "Hiragana-ryo": {
+            "q": "りょ",
+            "a": "ryo"
+        }
+    }
+}
