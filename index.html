@@ -445,7 +445,10 @@
                         this.render()
                     }
                 })
-                const content = e('div', [existingSelection, fileImportForm, remoteImportForm], { class: 'v-spaced' })
+                const exampleRemotes = e('div', [
+                    URL.parse('hiragana-grind.json', location.href)
+                ])
+                const content = e('div', [existingSelection, fileImportForm, remoteImportForm, exampleRemotes], { class: 'v-spaced' })
                 if (this.element) {
                     this.element.replaceWith(content)
                 }
@@ -575,7 +578,7 @@
                     leftSide.append(e("span", [`(offen: ${nudges.length})`]))
                 }
                 const nudge = nudges[Math.min(Math.floor(Math.random() * nudges.length), nudges.length - 1)]
-                const answerInput = e("input", [], { name: "answer", autocomplete: "off", autofocus: true })
+                const answerInput = e("input", [], { name: "answer", autocomplete: "off", autocorrect: "off", autocapitalize: "none", autofocus: true })
                 const form = e("form", [
                     answerInput,
                     e("button", [">"], { type: "submit", style: "font-weight: bold" })
