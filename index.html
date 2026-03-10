@@ -30,11 +30,16 @@
             border-top: 1px solid var(--light)
         }
 
+        html {
+            height: 100%;
+        }
+
         body {
             color-scheme: light dark;
             font-size: 1rem;
             line-height: 1.25rem;
             font-family: sans-serif;
+            height: 100%;
         }
 
         dialog {
@@ -83,13 +88,21 @@
         }
 
         @media (prefers-color-scheme: dark) {
+            :root {
+                --light: rgb(24, 110, 31);
+                --dark: rgb(226, 226, 226);
+            }
+
+            body {
+                background: linear-gradient(to top left, magenta, blue)
+            }
 
             body,
             text,
             svg {
-                color: var(--light);
-                fill: var(--light);
-                background-color: var(--dark);
+                color: var(--dark);
+                fill: var(--dark);
+                background-color: var(--light);
             }
         }
 
@@ -134,22 +147,86 @@
 <body>
     <outlet></outlet>
     <script type="text/javascript">
-        const state = {}
-        const config_key = "grind_config"
-        const stones_key = "grind_stones"
-        load()
+        //@ts-check
+        class State {
+            config_key = "grind_config"
+            stones_key = "grind_stones"
+            session_key = "grind_session"
+
+            remove(k) {
+                const name = this.stones[k].name
+                delete this.stones[k]
+                if (this.config.selected == k) {
+                    delete this.config.selected
+                }
+            }
+
+            select(id) {
+                state.config.selected = id;
+                this.sanitize()
+            }
+
+            selected() {
+                const selected = this.config?.selected
+                if (!selected) {
+                    return null
+                }
+                return this.stones[selected] ?? null
+            }
+
+            load() {
+                this.config = JSON.parse(localStorage.getItem(this.config_key) ?? "{}")
+                this.stones = JSON.parse(localStorage.getItem(this.stones_key) ?? "{}")
+                this.session = JSON.parse(localStorage.getItem(this.session_key) ?? "{}")
+                this.sanitize()
+            }
+
+            verifyNudge(answer, nudge) {
+                const correctAnswer = this.selected().nudges[nudge.id].a
+                const question = this.selected().nudges[nudge.id].q
+                const now = atMidhnight(new Date())
+                const nowMilis = now.getTime()
+                const valid = correctAnswer == answer
+                if (valid) {
+                    sharpen(this.selected(), nudge, nowMilis)
+                } else {
+                    dent(this.selected(), nudge, nowMilis)
+                }
+                return [answer, correctAnswer, question, valid]
+            }
+
+            save() {
+                localStorage.setItem(this.config_key, JSON.stringify(this.config ?? {}))
+                localStorage.setItem(this.stones_key, JSON.stringify(this.stones ?? {}))
+                localStorage.setItem(this.session_key, JSON.stringify(this.session ?? {}))
+            }
+
+            sanitize() {
+                if (!this.config?.selected) {
+                    return
+                }
+                const selected = this.selected()
+                if (!selected) {
+                    return
+                }
+                if (Array.isArray(selected.groves)) {
+                    selected.groves = {}
+                }
+                const groves = selected.groves
+                const nudges = selected.nudges
+                const nudgeKeys = new Set(Object.keys(nudges))
+                const groveKeys = new Set(Object.keys(groves))
+
+                const missingGroves = nudgeKeys.difference(groveKeys)
+                missingGroves.forEach(key => groves[key] = { id: key, next: 0 })
+
+                const orphanGroves = groveKeys.difference(nudgeKeys)
+                orphanGroves.forEach(key => delete groves[key])
+            }
+        }
+        const state = new State()
+        state.load()
         render()
-
-        function load() {
-            state.config = JSON.parse(localStorage.getItem(config_key) ?? "{}")
-            state.stones = JSON.parse(localStorage.getItem(stones_key) ?? "{}")
-            sanitize()
-        }
-
-        function save() {
-            localStorage.setItem(config_key, JSON.stringify(state.config ?? {}))
-            localStorage.setItem(stones_key, JSON.stringify(state.stones ?? {}))
-        }
 
         function svg(tag, children = [], opts = {}) {
             const el = document.createElementNS("http://www.w3.org/2000/svg", tag)
@@ -175,11 +252,11 @@
             return el
         }
 
-        function e(tag, content = [], opts = {}) {
+        function e(tag, content, opts = {}) {
             const el = document.createElement(tag)
             if (Array.isArray(content)) {
                 el.append(...content)
-            } else {
+            } else if (content) {
                 el.append(content)
             }
             if (tag == "button" && !opts.type) {
@@ -234,10 +311,12 @@
         }
 
         function toast(content, autoclose = true) {
-            const toast = e('div', content, { class: "toast" })
+            const toast = e('dialog', content, { class: "toast" })
             document.body.append(toast)
+            toast.show()
             if (autoclose) {
                 setTimeout(() => {
+                    toast.close()
                     toast.remove()
                 }, 3000);
             }
@@ -257,29 +336,21 @@
             }, 0);
         }
 
-        function remove(k) {
-            const name = state.stones[k].name
-            delete state.stones[k]
-            if (state.config.selected == k) {
-                delete state.config.selected
-            }
-            toast(`${name} gelöscht!`)
-            save()
-            render()
-        }
-
         function removeDialog(k, self) {
             const content = e('div', [
                 e('span', `${state.stones[k].name} wirklich löschen?`),
                 e('div', [
-                    e('button', `Ja`, {
+                    e('button', ['Ja'], {
                         type: "button", $click: (event) => {
-                            remove(k)
+                            state.remove(k)
+                            toast(`${name} gelöscht!`)
+                            state.save()
+                            render()
                             self.render()
                             event.target.closest("dialog")?.close()
                         }
                     }),
-                    e('button', `Nein`, {
+                    e('button', ['Nein'], {
                         type: "button", $click: (event) => {
                             event.target.closest("dialog")?.close()
                         }
@@ -295,7 +366,7 @@
 
         function showNewSet() {
             const newSetForm = e("form", [
-                e('span', "Neues Set"),
+                e('span', ["Neues Set"]),
                 fieldFn("Name des Sets", { name: "name", required: true }),
                 e("button", ["Set erstellen"], { type: "submit" })
             ], {
@@ -315,7 +386,7 @@
                     [...Object.keys(stone.nudges)].forEach(k => stone.groves[k] = { id: k, next: 0 })
                     state.config.selected = stone.key
                     toast("Erstellt")
-                    save()
+                    state.save()
                     render()
                     event.target.closest("dialog")?.close()
                 }
@@ -351,35 +422,7 @@
             [...Object.keys(stone.nudges)].forEach(k => stone.groves[k] = { id: k, next: 0 })
             state.config.selected = stone.key
             toast("Importiert!")
-            save()
-        }
-
-        function sanitize() {
-            if (!state?.config?.selected) {
-                return
-            }
-            const id = state.config.selected
-            if (!state.stones[id]) {
-                return
-            }
-            if (Array.isArray(state.stones[id].groves)) {
-                state.stones[id].groves = {}
-            }
-            const groves = state.stones[id].groves
-            const nudges = state.stones[id].nudges
-            const nudgeKeys = new Set(Object.keys(nudges))
-            const groveKeys = new Set(Object.keys(groves))
-            const missingGroves = nudgeKeys.difference(groveKeys)
-            const orphanGroves = groveKeys.difference(nudgeKeys)
-            orphanGroves.forEach(key => delete groves[key])
-            missingGroves.forEach(key => groves[key] = { id: key, next: 0 })
-        }
-
-        function selectSet(id) {
-            state.config.selected = id;
-            sanitize()
-            save()
-            render()
+            state.save()
         }
 
         class SelectionComponent {
@@ -390,8 +433,10 @@
                         e('span', v.name, { style: "flex-grow:1" }),
                         e('button', ['Wählen'], {
                             disabled: state.config.selected == k,
-                            $click: () => {
-                                selectSet(k)
+                            $click: (event) => {
+                                state.select(k)
+                                state.save()
+                                render()
                                 event.target.closest("dialog")?.close()
                             }
                         }),
@@ -471,16 +516,16 @@
         }
 
         function nudgeForm(nudge = {}, cb) {
-            const remove = () => {
+            const remove = (event) => {
                 const current = state.stones[state.config.selected]
                 delete current.nudges[nudge?.id]
                 delete current.groves[nudge?.id]
-                save()
+                state.save()
                 cb()
                 render()
                 event.target.closest("dialog")?.close()
             }
-            selection = e("form", [
+            const selectionForm = e("form", [
                 e("div", [state.stones[state.config.selected].name]),
                 fieldFn("Id", { name: "id", type: "input", value: nudge.id, required: true }),
                 fieldFn("Frage", { name: "q", type: "input", value: nudge.q, required: true }),
@@ -496,6 +541,9 @@
                     const id = fd.get("id")
                     const a = fd.get("a")
                     const q = fd.get("q")
+                    if (!id || !q || !a) {
+                        return
+                    }
                     const current = state.stones[state.config.selected]
                     current.nudges[id] = { q, a }
                     if (nudge.id !== id) {
@@ -505,28 +553,19 @@
                         current.groves[id] = { id, next: 0 }
                     }
                     toast("Added!")
-                    save()
+                    state.save()
                     cb()
                     render()
                     event.target.closest("dialog")?.close()
                 }
             })
-            modal(selection)
-        }
-
-        function resetGroves() {
-            const stone = state.stones[state.config.selected]
-            stone.groves = {};
-            [...Object.keys(stone.nudges)].forEach(k => stone.groves[k] = { id: k, next: 0 })
-            save()
-            render()
+            modal(selectionForm)
         }
 
         class CurrentSetComponent {
             element = null
 
             render() {
-                console.log(state.stones[state.config.selected])
                 const nudges = state.stones[state.config.selected].nudges
                 const renderTile = ([id, v]) => {
                     return e('button', [e('div', v.q), e('div', v.a)], { $click: () => nudgeForm({ id, ...v }, () => this.render()) })
@@ -546,6 +585,39 @@
             modal(new CurrentSetComponent().render())
         }
 
+        function newSession() {
+            const now = atMidhnight(new Date())
+            const nowMilis = now.getTime()
+            const selectedStone = state.selected()
+            const groves = selectedStone.groves
+            state.session = {}
+            const available = [...Object.values(groves)].filter((v) => v.next <= nowMilis)
+            state.session[`${nowMilis}-${selectedStone.key}`] = shuffle(available).slice(0, 20)
+        }
+
+        function currentSession() {
+            const selectedStone = state.selected()
+            const now = atMidhnight(new Date())
+            const nowMilis = now.getTime()
+            if (!state?.session?.[`${nowMilis}-${selectedStone.key}`]) {
+                newSession()
+            }
+            return state?.session?.[`${nowMilis}-${selectedStone.key}`].filter((v) => v.next <= nowMilis)
+        }
+
+        // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array
+        }
+
+        function randomElement(arr) {
+            return shuffle(arr)[0]
+        }
+
         function render() {
             const outlet = document.querySelector("outlet") ?? e("outlet")
             if (!outlet.parentElement) {
@@ -561,27 +633,23 @@
                 rightSide
             ])
             outlet.append(header)
-            const selected = state?.config?.selected
-            if (selected && state?.stones[selected]) {
-                const selectedStone = state?.stones[selected]
-                const material = selectedStone.material
-                const groves = selectedStone.groves
+            const selectedStone = state.selected()
+            if (selectedStone) {
                 const now = atMidhnight(new Date())
                 const nowMilis = now.getTime()
-                const nudges = [...Object.values(groves)].filter((v) => v.next <= nowMilis)
-                nudges.sort((a, b) => a.l - b.l)
+                const nudges = currentSession()
 
                 leftSide.append(e("h1", [selectedStone.name]))
                 rightSide.append(e("button", ["+"], { type: "button", $click: () => nudgeForm() }))
                 rightSide.append(e("button", ["≡"], { type: "button", $click: () => showAll() }))
 
                 if (nudges.length == 0) {
-                    outlet.append(e("div", [e('p', "All done!"), e('p', "Keine offenen Aufgaben.")], { style: "text-align:center" }))
+                    outlet.append(e("div", [e('p', ["All done!"]), e('p', ["Keine offenen Aufgaben."])], { style: "text-align:center" }))
                     return
                 } else {
                     leftSide.append(e("span", [`(offen: ${nudges.length})`]))
                 }
-                const nudge = nudges[Math.min(Math.floor(Math.random() * nudges.length), nudges.length - 1)]
+                const nudge = randomElement(nudges)
                 const answerInput = e("input", [], { name: "answer", autocomplete: "off", autocorrect: "off", autocapitalize: "none", autofocus: true })
                 const form = e("form", [
                     answerInput,
@@ -592,9 +660,8 @@
                         event.preventDefault()
                         const fd = new FormData(event.target)
                         const answer = fd.get("answer")
-                        const correctAnswer = selectedStone.nudges[nudge.id].a
-                        renderResult(answer, correctAnswer, nudge, nowMilis)
-                        save()
+                        renderResult(...state.verifyNudge(answer, nudge))
+                        state.save()
                     }
                 })
                 const content = e('content', [
@@ -604,39 +671,37 @@
                 outlet.append(content)
                 answerInput.focus()
             } else {
-                leftSide.append(e("h1", ['👋']))
+                leftSide.append(e("h1", ['🦜']))
                 outlet.append(e('div', [
                     e('h2', 'Hallo!'),
                     e('p', 'Es ist kein Set gewählt.'),
                     e('p', 'Set wählen:'),
-                    e("button", ["Sets"], { $click: () => showSelection() }),
+                    e("button", "Sets", { $click: () => showSelection() }),
                     e('p', 'Neues Set anlegen:'),
-                    e("button", ["Neues Set"], { $click: () => showNewSet() })
+                    e("button", "Neues Set", { $click: () => showNewSet() })
                 ], { style: "text-align: center" }))
             }
             const svgs = document.querySelectorAll("svg");
             svgs.forEach(element => {
-                const bbox = element.querySelector("text").getBBox();
-                element.setAttribute("viewBox", [bbox.x, bbox.y, bbox.width, bbox.height].join(" "));
+                const bbox = element.querySelector("text")?.getBBox();
+                if (bbox) {
+                    element.setAttribute("viewBox", [bbox.x, bbox.y, bbox.width, bbox.height].join(" "));
+                }
             });
         }
 
-        function renderResult(answer, correctAnswer, nudge, nowMilis) {
-            const selected = state?.config?.selected
-            const selectedStone = state?.stones[selected]
+        function renderResult(answer, correctAnswer, question, valid) {
             const outlet = document.querySelector("outlet") ?? e("outlet")
             if (!outlet.parentElement) {
                 document.body.append(outlet)
             }
             outlet.innerHTML = ""
             let displayTime = 3000
-            if (answer == correctAnswer) {
+            if (valid) {
                 displayTime = 1500
-                sharpen(selectedStone, nudge, nowMilis)
-                outlet.append(e('content', [e('p', ["✔"], { style: "color: green" }), e('p', [selectedStone.nudges[nudge.id].q, ' ', correctAnswer])], { class: "bigger" }))
+                outlet.append(e('content', [e('p', ["✔"], { style: "color: green" }), e('p', [question, ' ', correctAnswer])], { class: "bigger" }))
             } else {
-                dent(selectedStone, nudge, nowMilis)
-                outlet.append(e('content', [e('p', ["✘"], { style: "color: red" }), e('p', [answer], { class: "wrong" }), e('p', [selectedStone.nudges[nudge.id].q, ' ', correctAnswer])], { class: "bigger" }))
+                outlet.append(e('content', [e('p', ["✘"], { style: "color: red" }), e('p', [answer], { class: "wrong" }), e('p', [question, ' ', correctAnswer])], { class: "bigger" }))
             }
             setTimeout(() => render(), displayTime)
         }
