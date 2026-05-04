@@ -123,7 +123,23 @@ function addPresentSets() {
 
 function showStats(s) {
     const contentElement = statsDialog.querySelector("content")
-    contentElement.replaceChildren(JSON.stringify(stats[s.key]))
+    const selectedStats = stats[s.key]
+    if (selectedStats) {
+        const children = Object.values(selectedStats).map(it => {
+            return n('div', [
+                it.q,
+                " ",
+                it.a,
+                " ",
+                n('div', it.h.map(h => n('div', h.map(c => box(c)), { style: "display:flex;" })))
+            ], { style: "display: flex;  gap: 8px;  align-items: baseline;  justify-content: space-between;" })
+
+        })
+        contentElement.replaceChildren(...children)
+    } else {
+
+        contentElement.replaceChildren()
+    }
     statsDialog.showModal()
 }
 

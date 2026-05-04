@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Vokabelschnabel</title>
+    <link rel="icon" href="favicon.png">
     <style>
         :root {
             --space: 8px;
@@ -29,7 +30,7 @@
         @media (prefers-color-scheme: dark) {
             :root {
                 --light: black;
-                --dark: white;
+                --dark: #FFE37F;
                 --ok: ForestGreen;
                 --error: darkred;
             }
@@ -46,6 +47,11 @@
         button {
             border-radius: 0;
             background-color: white;
+        }
+
+        dialog::backdrop {
+            opacity: 0.6;
+            background: var(--light);
         }
 
         menu {
@@ -188,8 +194,12 @@
             <summary></summary>
             <intro>
                 <div style="font-size: medium;">
+                    <img src="favicon.png" width="200" height="200">
                     <h1>
-                        Vokabeltrainer
+                        Vokabelschnabel
+                        <!--
+                        <a href="https://www.flaticon.com/free-icons/shoebill" title="shoebill icons">Shoebill icons created by Yuluck - Flaticon</a>
+                        -->
                     </h1>
                     <p>
                         Lade Vokabeln über <code>Import</code> oder starte eine Übung über <code>Start</code>
