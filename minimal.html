@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        :root {
+            --space: 8px;
+            --light: rgb(235, 247, 221);
+            --dark: black;
+            --ok: LimeGreen;
+            --error: red;
+        }
+
+
+        @media (prefers-color-scheme: dark) {
+
+            body,
+            text,
+            svg {
+                color: var(--dark);
+                fill: var(--dark);
+                background-color: var(--light);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --light: black;
+                --dark: white;
+                --ok: ForestGreen;
+                --error: darkred;
+            }
+
+            body,
+            text,
+            svg {
+                color: var(--dark);
+                fill: var(--dark);
+                background-color: var(--light);
+            }
+        }
+
+        button {
+            border-radius: 0;
+            background-color: white;
+        }
+
+        menu {
+            display: flex;
+            gap: var(--space)
+        }
+
+        body,
+        main,
+        input,
+        button {
+            font-size: large;
+            font-family: sans-serif;
+            display: grid;
+            justify-content: center;
+        }
+
+        question {
+            font-size: 200%;
+        }
+
+        status,
+        question,
+        intro,
+        answer>input {
+            font-size: xx-large;
+            text-align: center;
+        }
+
+        status,
+        question {
+            display: block;
+        }
+
+        .gapped-column {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space)
+        }
+
+        .spaced-row {
+            display: flex;
+            gap: var(--space);
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .row {
+            display: flex;
+            gap: var(--space);
+            align-items: baseline;
+        }
+
+        .centered {
+            display: flex;
+            gap: var(--space);
+            justify-content: center;
+        }
+
+        [hidden] {
+            display: none;
+        }
+
+        dialog {
+            background-color: var(--light);
+            color: var(--dark);
+            padding: 0;
+            overflow: auto;
+            font-size: medium;
+
+            h2 {
+                display: inline;
+            }
+        }
+
+        .dialog-container {
+            display: grid;
+            gap: var(--space);
+            position: relative;
+            padding: 15px;
+        }
+
+        .dialog-close {
+            float: right;
+            font-size: 25px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: -5px;
+            margin-left: var(--space);
+        }
+    </style>
+</head>
+
+<body>
+    <menu class="centered">
+        <button id="setsButton" commandfor="sets" command="show-modal">Sets</button>
+        <button id="start">Start</button>
+        <input id="time" value="5" style="width:2ch">sec
+    </menu>
+    <dialog id="sets">
+        <div class="dialog-container">
+            <header>
+                <h2>Sets</h2>
+                <button class="dialog-close" commandfor="sets" command="close">X</button>
+            </header>
+            <div>
+                <h3>Vorhandene Sets</h3>
+                <div id="localSets" class="gapped-column"></div>
+            </div>
+            <div class="spaced-row">
+                <span>Datei mit Vokabeln einlesen: </span>
+                <div>
+                    <button id="import">Import</button>
+                    <input id="importFile" type="file" style="display:none">
+                </div>
+            </div>
+            <div>
+                <h3>Vorgefertigte Sets japanische Zeichen</h3>
+                <div id="premadeSets" class="gapped-column"></div>
+            </div>
+        </div>
+    </dialog>
+    <dialog id="stats">
+        <div class="dialog-container">
+            <header>
+                <h2>Stats</h2>
+                <button class="dialog-close" commandfor="stats" command="close">X</button>
+            </header>
+            <content>
+            </content>
+        </div>
+    </dialog>
+    <main>
+        <div class="gapped-column">
+            <status></status>
+            <question></question>
+            <summary></summary>
+            <intro>
+                <div style="font-size: medium;">
+                    <h1>
+                        Vokabeltrainer
+                    </h1>
+                    <p>
+                        Lade Vokabeln über <code>Import</code> oder starte eine Übung über <code>Start</code>
+                    </p>
+                </div>
+            </intro>
+        </div>
+        <div class="centered">
+            <answer>
+                <input name="answer" autocomplete="none" hidden />
+            </answer>
+        </div>
+    </main>
+    <script src="repetition.js" type="module"></script>
+</body>
+
+</html>
