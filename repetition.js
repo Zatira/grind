@@ -121,25 +121,35 @@ function addPresentSets() {
     )
 }
 
-function showStats(s) {
+function showStats(set) {
     const contentElement = statsDialog.querySelector("content")
-    const selectedStats = stats[s.key]
-    if (selectedStats) {
-        const children = Object.values(selectedStats).map(it => {
-            return n('div', [
-                it.q,
-                " ",
-                it.a,
-                " ",
-                n('div', it.h.map(h => n('div', h.map(c => box(c)), { style: "display:flex;" })))
-            ], { style: "display: flex;  gap: 8px;  align-items: baseline;  justify-content: space-between;" })
-
-        })
-        contentElement.replaceChildren(...children)
-    } else {
-
-        contentElement.replaceChildren()
-    }
+    const selectedStats = stats[set.key] ?? {}
+    const displayStats = { ...selectedStats }
+    Object.values(set.nudges).forEach(nudge => {
+        const key = `q${nudge.q}_a${nudge.a}`
+        if (!displayStats[key]) {
+            displayStats[key] = { q: nudge.q, a: nudge.a, h: [[]] }
+        }
+    })
+    const children = Object.values(displayStats).sort((a, b) => {
+        const ah = a.h.flat(1)
+        const bh = b.h.flat(1)
+        const ld = ah.length - bh.length;
+        if (ah.length == 0 || bh.length == 0) {
+            return ld
+        }
+        if (ld === 0) {
+            return ah.filter(Boolean).length - bh.filter(Boolean).length
+        }
+        return ld
+    }).map(it => {
+        return n('div', [
+            n('span', it.q),
+            n('span', it.a),
+            n('div', it.h.map(h => n('div', h.map(c => box(c)), { style: "display:flex; justify-content:end;" })), { style: "flex-grow:1;" })
+        ], { style: "display: flex;  gap: var(--space); padding:4px; justify-content: space-between;" })
+    })
+    contentElement.replaceChildren(...children)
     statsDialog.showModal()
 }
 
@@ -219,7 +229,9 @@ function updateStats(currentStats) {
             setStats[key] = { q: item.q, a: item.a, h: [] }
         }
         const itemStats = setStats[key]
-        itemStats.h.push(item.c)
+        if (item.c) {
+            itemStats.h.push(item.c)
+        }
         while (itemStats.length > 5) {
             itemStats.shift()
         }
@@ -242,12 +254,34 @@ function beginSession() {
         alert("keine Daten vorhanden")
         return
     }
+    const selectionStats = stats[loadedSet.key] ?? {}
     //copy
     const nudgeCopy = structuredClone(nudges)
     //shuffle
     const shuffled = shuffle(Object.values(nudgeCopy))
-    //pick x
-    const picked = shuffled.slice(0, 5)
+    const picked = []
+    //pick not practiced
+    const notPracticed = shuffled.filter((item) => {
+        const key = `q${item.q}_a${item.a}`
+        const itemStats = selectionStats[key] ?? {};
+        return (itemStats.h ?? []).length < 3
+    })
+    picked.push(...notPracticed.slice(0, 5))
+    //fill with not perfect
+    const notPerfect = shuffled.filter((item) => {
+        const key = `q${item.q}_a${item.a}`
+        const itemStats = selectionStats[key] ?? {};
+        return (itemStats.h ?? []).length >= 3 && (itemStats.h ?? []).flat(1).filter((i) => !i).length > 0
+    })
+    picked.push(...notPerfect.slice(0, 5 - picked.length))
+    //fill with perfect
+    const perfect = shuffled.filter((item) => {
+        const key = `q${item.q}_a${item.a}`
+        const itemStats = selectionStats[key] ?? {};
+        return (itemStats.h ?? []).length >= 3 && (itemStats.h ?? []).flat(1).filter((i) => !i).length === 0
+    })
+    picked.push(...perfect.slice(0, 5 - picked.length))
+    console.log(notPracticed, notPerfect, perfect)
     current = []
     for (let j = 0; j < 5; j++) {
         current.push(...shuffle(structuredClone(picked)))

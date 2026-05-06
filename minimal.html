@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <title>Vokabelschnabel</title>
     <link rel="icon" href="favicon.png">
     <style>
@@ -44,9 +44,29 @@
             }
         }
 
+        .zebra>*:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        html {
+            display: grid;
+            height: 100dvh;
+        }
+
+        body {
+            hyphens: auto;
+            grid-template-rows: min-content 1fr min-content;
+        }
+
         button {
             border-radius: 0;
             background-color: white;
+
+            &.clear {
+                background-color: transparent;
+                border: 0;
+                color: var(--dark);
+            }
         }
 
         dialog::backdrop {
@@ -56,7 +76,13 @@
 
         menu {
             display: flex;
-            gap: var(--space)
+            gap: var(--space);
+            padding: 0;
+        }
+
+        .container {
+            width: 800px;
+            max-width: 90dvw;
         }
 
         body,
@@ -66,7 +92,9 @@
             font-size: large;
             font-family: sans-serif;
             display: grid;
+            gap: var(--space);
             justify-content: center;
+            box-sizing: border-box;
         }
 
         question {
@@ -149,11 +177,16 @@
 </head>
 
 <body>
-    <menu class="centered">
-        <button id="setsButton" commandfor="sets" command="show-modal">Sets</button>
-        <button id="start">Start</button>
-        <input id="time" value="5" style="width:2ch">sec
-    </menu>
+    <div class="spaced-row container" style="align-items: center;">
+        <div>
+            <img src="favicon.png" width="30" height="30" title="Vokabelschnabel">
+        </div>
+        <menu class="centered">
+            <button id="setsButton" commandfor="sets" command="show-modal">Sets</button>
+            <button id="start">Start</button>
+            <input id="time" value="5" style="width:4ch" type="number">sec
+        </menu>
+    </div>
     <dialog id="sets">
         <div class="dialog-container">
             <header>
@@ -183,23 +216,29 @@
                 <h2>Stats</h2>
                 <button class="dialog-close" commandfor="stats" command="close">X</button>
             </header>
-            <content>
+            <p>
+                Die letzten 5 Übungen zu jeder Vokabel werden aufgehoben. Übungen werden über diese Statistiken
+                zusammengestellt:
+            </p>
+            <ul>
+                <li>Weniger als 3 Übungen</li>
+                <li>mit Fehlern</li>
+                <li>Rest zufällig</li>
+            </ul>
+            <content class="zebra">
             </content>
         </div>
     </dialog>
-    <main>
+    <main class="container" style="align-content: center;">
         <div class="gapped-column">
             <status></status>
             <question></question>
             <summary></summary>
             <intro>
                 <div style="font-size: medium;">
-                    <img src="favicon.png" width="200" height="200">
+                    <img src="favicon.png" width="200" height="200" style="max-width: 90dvw; max-height: 90dvw;">
                     <h1>
                         Vokabelschnabel
-                        <!--
-                        <a href="https://www.flaticon.com/free-icons/shoebill" title="shoebill icons">Shoebill icons created by Yuluck - Flaticon</a>
-                        -->
                     </h1>
                     <p>
                         Lade Vokabeln über <code>Import</code> oder starte eine Übung über <code>Start</code>
@@ -209,10 +248,27 @@
         </div>
         <div class="centered">
             <answer>
-                <input name="answer" autocomplete="none" hidden />
+                <input name="answer" autocomplete="none" hidden style="max-width: 90dvw;" />
             </answer>
         </div>
     </main>
+    <div>
+        <button commandfor="aboutDialog" command="show-modal" class="clear" style="float: right;">About</button>
+        <dialog id="aboutDialog">
+            <div class="dialog-container">
+                <header>
+                    <h2>About</h2>
+                    <button class="dialog-close" commandfor="aboutDialog" command="close">X</button>
+                </header>
+                <p>
+                    Icons by:<br>
+                    <a href="https://www.flaticon.com/free-icons/shoebill" title="shoebill icons">Shoebill icons created
+                        by
+                        Yuluck - Flaticon</a>
+                </p>
+            </div>
+        </dialog>
+    </div>
     <script src="repetition.js" type="module"></script>
 </body>
 
