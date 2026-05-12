@@ -67,6 +67,26 @@
                 border: 0;
                 color: var(--dark);
             }
+
+            &.inline {
+                display: inline-block
+            }
+
+            &.choice {
+                border-radius: .25rem;
+                border: 1px solid var(--dark);
+                color: var(--dark);
+                background: var(--light);
+                padding: .5rem;
+
+                &:focus {
+                    box-shadow: 0px 0px 4px 1px var(--dark);
+                }
+            }
+        }
+
+        label input {
+            display: inline;
         }
 
         dialog::backdrop {
@@ -125,6 +145,10 @@
             gap: var(--space);
             justify-content: space-between;
             align-items: baseline;
+
+            &.sparse {
+                gap: calc(var(--space) * 2)
+            }
         }
 
         .row {
@@ -143,7 +167,8 @@
             display: none;
         }
 
-        dialog {
+        dialog,
+        [popover] {
             background-color: var(--light);
             color: var(--dark);
             padding: 0;
@@ -155,7 +180,8 @@
             }
         }
 
-        .dialog-container {
+        .dialog-container,
+        .popover-container {
             display: grid;
             gap: var(--space);
             position: relative;
@@ -173,18 +199,22 @@
             margin-top: -5px;
             margin-left: var(--space);
         }
+
+        #menu {
+            margin: 0.5rem;
+            inset: auto;
+            position-area: bottom;
+        }
     </style>
 </head>
 
 <body>
     <div class="spaced-row container" style="align-items: center;">
-        <div>
+        <button class="clear" popovertarget="menu">
             <img src="favicon.png" width="30" height="30" title="Vokabelschnabel">
-        </div>
+        </button>
         <menu class="centered">
-            <button id="setsButton" commandfor="sets" command="show-modal">Sets</button>
-            <button id="start">Start</button>
-            <input id="time" value="5" style="width:4ch" type="number">sec
+            <button class="start">Start</button>
         </menu>
     </div>
     <dialog id="sets">
@@ -194,7 +224,9 @@
                 <button class="dialog-close" commandfor="sets" command="close">X</button>
             </header>
             <div>
-                <h3>Vorhandene Sets</h3>
+                <div class="spaced-row">
+                    <h3>Vorhandene Sets</h3> <button commandfor="newSetDialog" command="show-modal">Neues Set</button>
+                </div>
                 <div id="localSets" class="gapped-column"></div>
             </div>
             <div class="spaced-row">
@@ -208,6 +240,23 @@
                 <h3>Vorgefertigte Sets japanische Zeichen</h3>
                 <div id="premadeSets" class="gapped-column"></div>
             </div>
+            <dialog id="newSetDialog">
+                <div class="dialog-container">
+                    <header>
+                        <h2>Neues Set</h2>
+                        <button class="dialog-close" commandfor="newSetDialog" command="close">X</button>
+                    </header>
+                    <div>
+                        <form>
+                            <label>
+                                <input name="name">
+                            </label>
+                            <pre>TODO</pre>
+                            <button disabled>Erstellen</button>
+                        </form>
+                    </div>
+                </div>
+            </dialog>
         </div>
     </dialog>
     <dialog id="stats">
@@ -241,7 +290,9 @@
                         Vokabelschnabel
                     </h1>
                     <p>
-                        Lade Vokabeln über <code>Import</code> oder starte eine Übung über <code>Start</code>
+                        Lade Vokabeln: <button class="setsButton inline" commandfor="sets"
+                            command="show-modal">Sets</button><br>
+                        oder<br> starte eine Übung: <button class="start inline">Start</button>
                     </p>
                 </div>
             </intro>
@@ -249,6 +300,7 @@
         <div class="centered">
             <answer>
                 <input name="answer" autocomplete="none" hidden style="max-width: 90dvw;" />
+                <div id="mc" class="spaced-row sparse"></div>
             </answer>
         </div>
     </main>
@@ -268,6 +320,31 @@
                 </p>
             </div>
         </dialog>
+    </div>
+    <div id="menu" popover="auto">
+        <div class="popover-container">
+            <div>
+                <button class="setsButton" commandfor="sets" command="show-modal">Sets verwalten</button>
+            </div>
+            <div class="spaced-row">
+                Wartezeit nach Lösung: <div>
+                    <label>
+                        <input id="time" value="5" style="width:4ch; margin-right: var(--space);" type="number">sec
+                    </label>
+                </div>
+            </div>
+            <div class="spaced-row">
+                Antwortmöglichkeiten:
+                <div>
+                    <label>
+                        <input name="answerType" type="radio" value="input" checked> Eingabe
+                    </label>
+                    <label>
+                        <input name="answerType" type="radio" value="mc"> Auswahl
+                    </label>
+                </div>
+            </div>
+        </div>
     </div>
     <script src="repetition.js" type="module"></script>
 </body>

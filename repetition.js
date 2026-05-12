@@ -7,8 +7,10 @@ let progressElement = null
 let summaryElement = null
 let statsDialog = null
 let answerInput = null
+let answerMc = null
+let answerType = null
 let importButton = null
-let startButton = null
+let startButtons = null
 let importFile = null
 let timeInput = null
 let loadedSet = {}
@@ -17,6 +19,7 @@ let i = 0
 let inresult = false
 let stats = {}
 let sets = []
+let mc = false;
 
 function init() {
     introElement = document.body.querySelector("intro")
@@ -24,12 +27,14 @@ function init() {
     summaryElement = document.body.querySelector("summary")
     progressElement = document.body.querySelector("status")
     answerInput = document.body.querySelector("answer input")
+    answerMc = document.body.querySelector("answer div#mc")
     importButton = document.body.querySelector("button#import")
     importFile = document.body.querySelector("input#importFile")
     timeInput = document.body.querySelector("input#time")
     statsDialog = document.body.querySelector("dialog#stats")
 
-    startButton = document.body.querySelector("button#start")
+    startButtons = document.body.querySelectorAll("button.start")
+    answerType = document.body.querySelectorAll("input[name='answerType']")
 
     importButton?.addEventListener("click", () => importFile.click())
     importFile?.addEventListener("change", async (ev) => {
@@ -41,26 +46,19 @@ function init() {
     })
 
     answerInput?.addEventListener("keydown", (ev) => {
-        if (ev.key?.toLowerCase() === "ENTER".toLowerCase() && !inresult) {
-            inresult = true
-            const item = current[i]
-            const correct = item.a.toLowerCase().trim() === answerInput.value.toLowerCase().trim()
-            item.correct = correct
-            questionElement.innerText = correct ? "Korrekt" : "Falsch: " + item.q + " " + item.a
-            answerInput.value = ""
-            setTimeout(() => {
-                if (i + 1 < current.length) {
-                    i = i + 1
-                    renderQuestion()
-                } else {
-                    done()
-                }
-                inresult = false
-            }, +(timeInput?.value ?? 5) * 1000);
+        if (ev.key?.toLowerCase() === "ENTER".toLowerCase()) {
+            onAnswer(ev)
         }
     })
 
-    startButton?.addEventListener("click", () => beginSession())
+    startButtons.forEach(b => b.addEventListener("click", () => beginSession()))
+
+    answerType.forEach(inp => inp.addEventListener("change", (e) => {
+        mc = e?.target?.value === "mc"
+        if (i + 1 < current.length) {
+            renderQuestion()
+        }
+    }))
 
     readStateFromStorage()
 
@@ -69,6 +67,29 @@ function init() {
     }
     addPremateSets()
     addPresentSets()
+}
+
+function onAnswer(ev) {
+    if (inresult) {
+        return
+    }
+    inresult = true
+    const item = current[i]
+    const correct = item.a.toLowerCase().trim() === ev.target.value.toLowerCase().trim()
+    item.correct = correct
+    const text = correct ? "" + item.q + " " + item.a : "" + item.q + " " + item.a
+    ev.target.value = ""
+    const color = correct ? "var(--ok)" : "var(--error)"
+    questionElement.replaceChildren(n('span', [text], { style: `color:${color}` }))
+    setTimeout(() => {
+        if (i + 1 < current.length) {
+            i = i + 1
+            renderQuestion()
+        } else {
+            done()
+        }
+        inresult = false
+    }, +(timeInput?.value ?? 5) * 1000);
 }
 
 function addPremateSets() {
@@ -162,6 +183,7 @@ function loadSet(set) {
     questionElement.replaceChildren()
     localStorage.setItem('mini', JSON.stringify(loadedSet ?? {}) ?? '{}')
     answerInput.setAttribute('hidden', "true")
+    answerMc.replaceChildren()
     introElement.removeAttribute('hidden')
 }
 
@@ -177,6 +199,7 @@ function addSet(content) {
     localStorage.setItem('mini:sets', JSON.stringify(sets ?? []) ?? '[]')
     addPresentSets()
     answerInput.setAttribute('hidden', "true")
+    answerMc.replaceChildren()
     introElement.removeAttribute('hidden')
 }
 
@@ -213,7 +236,8 @@ function done() {
             ], { style: "display: flex;  gap: 8px;  align-items: baseline;  justify-content: space-between;" })
         })
     )
-    answerInput.setAttribute("hidden", "true")
+    answerInput.setAttribute('hidden', "true")
+    answerMc.replaceChildren()
 }
 
 function updateStats(currentStats) {
@@ -293,11 +317,36 @@ function beginSession() {
 
 function renderQuestion() {
     summaryElement.replaceChildren()
+    questionElement.replaceChildren()
     questionElement.innerText = current[i].q
     progressElement.innerText = i + 1 + "/" + current.length
-    answerInput.removeAttribute("hidden")
-    answerInput.focus()
+    answerMc.replaceChildren()
+
+    // multiple choice
+    if (mc) {
+        answerInput.setAttribute('hidden', "true")
+        const shuffledOptions = getChoices(current[i].a)
+        answerMc.replaceChildren(...shuffledOptions.map(o => n('button', o, { value: o, $click: (ev) => onAnswer(ev), class: "choice" })))
+    } else {
+        answerInput.removeAttribute("hidden")
+        if (!document.activeElement) {
+            answerInput.focus()
+        }
+    }
     introElement.setAttribute('hidden', "true")
+}
+
+function getChoices(a) {
+    const nudges = loadedSet.nudges
+    //copy
+    const nudgeCopy = structuredClone(nudges)
+    //shuffle
+    const shuffled = shuffle(Object.values(nudgeCopy))
+    //pick
+    const options = shuffled.map(o => o.a).filter(o => o !== a).slice(0, 2)
+    options.push(a)
+    const shuffledOptions = shuffle(options)
+    return shuffledOptions
 }
 
 // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
