@@ -1,5 +1,6 @@
 //@ts-check
 import { n } from "./dom.mjs"
+import { mores } from "./more.js"
 
 let introElement = null
 let questionElement = null
@@ -20,8 +21,12 @@ let inresult = false
 let stats = {}
 let sets = []
 let mc = false;
+let soundsInput = null
+let soundsPlayBtn = null
+let soundsOutput = null
+let kuroshiro = null
 
-function init() {
+async function init() {
     introElement = document.body.querySelector("intro")
     questionElement = document.body.querySelector("question")
     summaryElement = document.body.querySelector("summary")
@@ -33,6 +38,16 @@ function init() {
     timeInput = document.body.querySelector("input#time")
     statsDialog = document.body.querySelector("dialog#stats")
 
+    soundsInput = document.body.querySelector("input#soundsInput")
+    soundsOutput = document.body.querySelector("p#soundsOutput")
+    soundsPlayBtn = document.body.querySelector("button#soundsPlayBtn")
+    soundsInput?.addEventListener("input", async (ev) => {
+        soundsOutput.replaceChildren(await sounds(ev.target.value))
+    })
+    soundsPlayBtn?.addEventListener("click", async (ev) => {
+        read(soundsInput.value)
+    })
+
     startButtons = document.body.querySelectorAll("button.start")
     answerType = document.body.querySelectorAll("input[name='answerType']")
 
@@ -40,7 +55,7 @@ function init() {
     importFile?.addEventListener("change", async (ev) => {
         if (ev.target.files?.length === 1) {
             const textContent = await ev.target.files[0].text()
-            addSet(textContent)
+            await addSet(textContent)
             ev.target.closest('dialog').close()
         }
     })
@@ -67,6 +82,16 @@ function init() {
     }
     addPremateSets()
     addPresentSets()
+    await initKuroshiro()
+
+    if (soundsInput?.value && soundsOutput) {
+        soundsOutput.replaceChildren(await sounds(soundsInput.value))
+    }
+}
+
+async function initKuroshiro() {
+    kuroshiro = new window.Kuroshiro.default
+    await kuroshiro.init(new KuromojiAnalyzer({ dictPath: "vendor/kuromoji/dict/" }))
 }
 
 function onAnswer(ev) {
@@ -77,10 +102,9 @@ function onAnswer(ev) {
     const item = current[i]
     const correct = item.a.toLowerCase().trim() === ev.target.value.toLowerCase().trim()
     item.correct = correct
-    const text = correct ? "" + item.q + " " + item.a : "" + item.q + " " + item.a
     ev.target.value = ""
     const color = correct ? "var(--ok)" : "var(--error)"
-    questionElement.replaceChildren(n('span', [text], { style: `color:${color}` }))
+    questionElement.replaceChildren(n('span', [renderWithFurigana(`${item.q} ${item.a}`)], { style: `color:${color}` }))
     setTimeout(() => {
         if (i + 1 < current.length) {
             i = i + 1
@@ -99,6 +123,7 @@ function addPremateSets() {
         ['Zwei Zeichen Hiragana', URL.parse('hiragana-duo-grind.json', location.href)],
         ['Ein Zeichen Hiragana mit Diakrata', URL.parse('hiragana-single-dia-grind.json', location.href)],
         ['Zwei Zeichen Hiragana mit Diakrata', URL.parse('hiragana-duo-dia-grind.json', location.href)],
+        ['Test', URL.parse('test.json', location.href)],
     ]
     document.querySelector("#premadeSets")?.replaceChildren(
         ...premades.map(p => {
@@ -129,9 +154,19 @@ function addPresentSets() {
                     showStats(s)
                 }
             })
+            const deleteBtn = n('button', [`Löschen`], {
+                $click: async (ev) => {
+                    if (await confirmDialog(`Set ${s.name} wirklich löschen?`)) {
+                        deleteSet(s)
+                        ev.target.closest('dialog').close()
+                        addPresentSets()
+                    }
+                }
+            })
             const actionsRow = n('div', [
                 statsBtn,
-                loadBtn
+                loadBtn,
+                deleteBtn
             ], { class: 'row' })
             const row = n('div', [
                 s.name + (active ? ' (Activ)' : ''),
@@ -140,6 +175,47 @@ function addPresentSets() {
             return row
         })
     )
+}
+
+function deleteSet(set) {
+    sets = sets.filter(s => s !== set)
+}
+
+function createDialog(header, content, buttons, onClose) {
+    const id = crypto.randomUUID()
+    return n('dialog', [
+        n('div', [
+            n('header', [
+                n('h2', header),
+                n('button', ['X'], { class: "dialog-close", command: "close", commandfor: id })
+            ]),
+            n('div', content),
+            n('div', buttons, { class: "buttonline" })
+        ], { class: "dialog-container" })
+    ], { id, $close: () => onClose() })
+}
+
+function confirmDialog(query) {
+    return new Promise((resolve, reject) => {
+        const dialog = createDialog(
+            "Achtung",
+            query,
+            [n('button', ['Ja'], {
+                $click: () => {
+                    resolve(true)
+                    dialog.remove()
+                }
+            }), n('button', ['Nein'], {
+                $click: () => {
+                    resolve(false)
+                    dialog.remove()
+                }
+            })],
+            () => resolve(false)
+        )
+        document.body.append(dialog)
+        dialog.showModal()
+    })
 }
 
 function showStats(set) {
@@ -165,7 +241,7 @@ function showStats(set) {
         return ld
     }).map(it => {
         return n('div', [
-            n('span', it.q),
+            n('span', renderWithFurigana(it.q)),
             n('span', it.a),
             n('div', it.h.map(h => n('div', h.map(c => box(c)), { style: "display:flex; justify-content:end;" })), { style: "flex-grow:1;" })
         ], { style: "display: flex;  gap: var(--space); padding:4px; justify-content: space-between;" })
@@ -187,8 +263,15 @@ function loadSet(set) {
     introElement.removeAttribute('hidden')
 }
 
-function addSet(content) {
-    loadedSet = JSON.parse(content)
+async function addSet(content) {
+    const parsed = JSON.parse(content)
+    if (sets.find(s => s.key === parsed.key)) {
+        if (!(await confirmDialog("Set existiert bereits. Set überschreiben?"))) {
+            return
+        }
+        sets = sets.filter(s => s.key !== parsed.key)
+    }
+    loadedSet = parsed
     if (loadedSet?.name) {
         progressElement?.replaceChildren(`Aktuelles Set: ${loadedSet.name}`)
     }
@@ -205,7 +288,7 @@ function addSet(content) {
 
 async function fetchSet(url) {
     const textContent = await (await fetch(url)).text()
-    addSet(textContent)
+    await addSet(textContent)
 }
 
 function done() {
@@ -226,9 +309,8 @@ function done() {
     updateStats(currentStats)
     summaryElement.replaceChildren(
         ...currentStats.map(it => {
-            it.q + " " + it.a + " " + it.c
             return n('div', [
-                it.q,
+                renderWithFurigana(it.q),
                 " ",
                 it.a,
                 " ",
@@ -256,8 +338,8 @@ function updateStats(currentStats) {
         if (item.c) {
             itemStats.h.push(item.c)
         }
-        while (itemStats.length > 5) {
-            itemStats.shift()
+        while (itemStats.h.length > 5) {
+            itemStats.h.shift()
         }
     })
     localStorage.setItem("mini:stats", JSON.stringify(stats ?? {}) ?? '{}')
@@ -305,7 +387,6 @@ function beginSession() {
         return (itemStats.h ?? []).length >= 3 && (itemStats.h ?? []).flat(1).filter((i) => !i).length === 0
     })
     picked.push(...perfect.slice(0, 5 - picked.length))
-    console.log(notPracticed, notPerfect, perfect)
     current = []
     for (let j = 0; j < 5; j++) {
         current.push(...shuffle(structuredClone(picked)))
@@ -315,10 +396,92 @@ function beginSession() {
     renderQuestion()
 }
 
+function renderWithFurigana(q) {
+    const FURIGANA_START = '【'
+    const FURIGANA_END = '】'
+    if (window.Kuroshiro.default.Util.hasKanji(q)) {
+        const target = n('p', [])
+        kuroshiro.convert(q, { mode: "okurigana", to: "hiragana", delimiter_start: FURIGANA_START, delimiter_end: FURIGANA_END }).then(v => {
+            const content = []
+            let text = ""
+            let inRp = false
+            let inRuby = false
+            let ruby = n('ruby')
+            for (let i = 0; i < v.length; i++) {
+                const c = v.charAt(i)
+                if (c == FURIGANA_START || c == FURIGANA_END) {
+                    if (inRp) {
+                        ruby.append(n('rt', [text]))
+                    } else {
+                        ruby.append(n('span', [text]))
+                    }
+                    text = ""
+                    ruby.append(n("rp", [c]))
+                    if (c == FURIGANA_START) {
+                        inRp = true
+                    }
+                    if (c == FURIGANA_END) {
+                        inRp = false
+                        content.push(ruby)
+                        inRuby = false
+                        ruby = n('ruby')
+                    }
+                } else if (window.Kuroshiro.default.Util.isKanji(c)) {
+                    content.push(n('span', [text]))
+                    text = ""
+                    inRuby = true
+                    ruby.append(c)
+                } else {
+                    text += c
+                }
+            }
+            if (text.length > 0) {
+                content.push(n('span', [text]))
+            }
+            target.replaceChildren(...content)
+        })
+        return target
+    } else {
+        return n('span', q)
+    }
+}
+
+function read(gana) {
+    const vObj = getVoice()
+    if (vObj) {
+        const { voice, synth } = vObj
+        const utterThis = new SpeechSynthesisUtterance(gana);
+        utterThis.voice = voice
+        synth.speak(utterThis);
+    }
+}
+
+async function sounds(gana) {
+    return await kuroshiro.convert(gana, { mode: "okurigana", to: "hiragana", delimiter_start: "(", delimiter_end: ")" }).then(trans => {
+        Object.entries(mores).toSorted((a, b) => b[0].length - a[0].length).forEach(([k, v]) => trans = trans.replaceAll(k, v))
+        return trans
+    })
+}
+
+function getVoice() {
+    const synth = window.speechSynthesis;
+    if (!synth) {
+        return
+    }
+    const voice = synth.getVoices().filter(v => v.lang == "ja-JP")[0]
+    if (!voice) {
+        return
+    }
+    return { voice, synth }
+}
+
 function renderQuestion() {
     summaryElement.replaceChildren()
-    questionElement.replaceChildren()
-    questionElement.innerText = current[i].q
+    const q = current[i].q
+    const v = getVoice()
+    const kj = window.Kuroshiro.default.Util.hasKanji(q);
+    const playBtn = n('button', ['▶'], { $click: () => read(q) })
+    questionElement.replaceChildren(renderWithFurigana(q), (kj && v) ? playBtn : "")
     progressElement.innerText = i + 1 + "/" + current.length
     answerMc.replaceChildren()
 

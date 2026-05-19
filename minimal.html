@@ -129,9 +129,15 @@
             text-align: center;
         }
 
-        status,
-        question {
+        status {
             display: block;
+        }
+
+        question {
+            display: flex;
+            align-items: baseline;
+            gap: var(--space);
+            justify-content: center;
         }
 
         .gapped-column {
@@ -186,6 +192,12 @@
             gap: var(--space);
             position: relative;
             padding: 15px;
+
+            .buttonline {
+                display: flex;
+                gap: var(--space);
+                justify-content: end;
+            }
         }
 
         .dialog-close {
@@ -206,6 +218,8 @@
             position-area: bottom;
         }
     </style>
+    <script src="vendor/kuroshiro/kuroshiro.min.js"></script>
+    <script src="vendor/kuroshiro-analyzer-kuromoji/kuroshiro-analyzer-kuromoji.min.js"></script>
 </head>
 
 <body>
@@ -326,6 +340,9 @@
             <div>
                 <button class="setsButton" commandfor="sets" command="show-modal">Sets verwalten</button>
             </div>
+            <div>
+                <button class="setsButton" commandfor="soundsModal" command="show-modal">Aussprache</button>
+            </div>
             <div class="spaced-row">
                 Wartezeit nach Lösung: <div>
                     <label>
@@ -346,6 +363,22 @@
             </div>
         </div>
     </div>
+    <dialog id="soundsModal">
+        <div class="dialog-container">
+            <header>
+                <h2>Aussprache</h2>
+                <button class="dialog-close" commandfor="soundsModal" command="close">X</button>
+            </header>
+            <p>
+                <input id="soundsInput">
+            </p>
+            <p id="soundsOutput">
+            </p>
+            <div class="buttonline">
+                <button id="soundsPlayBtn">▶</button>
+            </div>
+        </div>
+    </dialog>
     <script src="repetition.js" type="module"></script>
 </body>
 

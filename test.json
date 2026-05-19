@@ -3,8 +3,16 @@
     "name": "Test",
     "nudges": {
         "ks": {
-            "q": "警察 [keisatsu]",
+            "q": "警察",
             "a": "Polizei"
+        },
+        "au": {
+            "q": "腕時計",
+            "a": "Armbanduhr"
+        },
+        "tt": {
+            "q": "感じ取れたら手を繋ごう",
+            "a": "Wenn du es spüren kannst, lass uns Händchen halten."
         }
     }
 }
